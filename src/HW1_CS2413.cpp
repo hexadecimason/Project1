@@ -2,6 +2,10 @@
 using namespace std;
 
 class CRM {
+    private:
+        int rCounter; // these are to keep track of how far each array has been filled.
+        int cCounter;
+        int vCounter;
     protected:
         int n; // number of rows in CRM
         int m; // number of columns in CRM
@@ -17,10 +21,10 @@ class CRM {
 
         int getNumRows(); // getter method for 'n'
         void addValue(int value); // add value to 'values' array
-        void addRow(int row);
-        void addColumn(int col);
+        void addRow(int row); // add a row number to the rowPos array
+        void addColumn(int col); // add a column number to the colPos array
 
-        void display(); // prints the three CRM
+        void display(); // prints the three CRM arrays
 
         int mostInfluentialUser();
         int mostActiveUser();
@@ -45,14 +49,55 @@ CRM::CRM(int rows, int cols, int numNonZeros){
     values = new int[nonZeros];
     rowPos = new int[n];
     colPos = new int[nonZeros];
+
+    rCounter = 0;
+    cCounter = 0;
+    vCounter = 0;
+}
+
+void CRM::addValue(int val){
+    values[vCounter] = val;
+    vCounter ++;
+}
+
+void CRM::addRow(int row){
+    // figure me out.
+}
+
+void CRM::addColumn(int col){
+    colPos[cCounter] = col;
+    cCounter ++;
+}
+
+void CRM::display(){
+    // values
+    cout << "values:";
+    for(int i = 0; i < nonZeros; i++){
+        cout << " " << values[i];
+    }
+    cout << endl;
+
+    // rowPos
+    cout << "rowPos:";
+    for(int i = 0; i < n; i++){
+        cout << " " << rowPos[i];
+    }
+    cout << endl;
+
+    // colPos
+    cout << "colPos:";
+    for(int i = 0; i < nonZeros; i++){
+        cout << " " << colPos[i];
+    }
+    cout << endl;
 }
 
 int CRM::mostInfluentialUser(){
-
+    return 0;
 }
 
 int* CRM::influentialUsers(){
-
+    return 0;
 }
 
 CRM::~CRM(){
@@ -83,12 +128,12 @@ int main(){
     A = new CRM(numRows, numCols, numNonZeros);
 
     // with numRows, numCols, and numNonZeros already read we just need each row of users, of which there are numRows.
-    for(int i = 0; i < numRows; i ++){
+    for(int i = 0; i < numNonZeros; i ++){
         cin >> row >> col >> value;
 
-        (*A).addValue(value);
         (*A).addRow(row);
         (*A).addColumn(col);
+        (*A).addValue(value);
     }
 
     (*A).display();
