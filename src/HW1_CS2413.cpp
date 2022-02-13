@@ -6,6 +6,8 @@ class CRM {
         int rCounter; // these are to keep track of how far each array has been filled.
         int cCounter;
         int vCounter;
+		int newRowCount; // allows us to track where the new rows begin; as addRow() gets repeatedly called and cleared from the stack, we need to keep track of which value marks a new row.
+        static const int EMPTY_ROW = -1; // default value for an empty row.
     protected:
         int n; // number of rows in CRM
         int m; // number of columns in CRM
@@ -53,6 +55,7 @@ CRM::CRM(int rows, int cols, int numNonZeros){
     rCounter = 0;
     cCounter = 0;
     vCounter = 0;
+	newRowCount = 0;
 }
 
 void CRM::addValue(int val){
@@ -61,7 +64,27 @@ void CRM::addValue(int val){
 }
 
 void CRM::addRow(int row){
-    // figure me out.
+
+if(row > rCounter){ // we've skipped a row and need to fill an EMPTY ROW.
+    int skippedRows = row - rCounter;
+    while(skippedRows > 0){
+        rowPos[rCounter] = -1;
+		rCounter ++;
+        skippedRows --;
+    }
+}
+
+if(row != rCounter - 1){ // checks to see if this is the same as previous row
+    for(int i = 0; i < nonZeros; i++){
+        if(values[i] == values[newRowCount]){
+            rowPos[rCounter] = i;
+        }
+     }
+    rCounter++;
+}   
+
+newRowCount++;
+
 }
 
 void CRM::addColumn(int col){
@@ -108,9 +131,10 @@ CRM::~CRM(){
     cout << "CRM object succesfully destroyed: memory leak avoided (probably)" << endl;
 
     // this was in the template, but why? Same reason as deleting arrays?
-    n = 0;
-    m = 0;
+    n = m = 0;
     nonZeros = 0;
+    rCounter = vCounter = cCounter = 0;
+
 }
 
 
@@ -131,9 +155,10 @@ int main(){
     for(int i = 0; i < numNonZeros; i ++){
         cin >> row >> col >> value;
 
+        (*A).addValue(value);
         (*A).addRow(row);
         (*A).addColumn(col);
-        (*A).addValue(value);
+        
     }
 
     (*A).display();
