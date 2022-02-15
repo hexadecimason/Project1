@@ -213,66 +213,51 @@ int* CRM::activeUsers(){
 
 // takes an array of scores and returns a list of it's indicies in order based on the score.
 int* CRM::userSort(int* scores){
-    int* userList = new int[n];
 
+    int* userList = new int[n];
     int user;
     int nextHighest;
     int score;
     bool isDuplicate;
+    int temp;
 
     int largestScore = 0;
 
-    // we will aquire the highest score so that we can reference n-1 to easily access the "next highest."
+    // duplicate
+    int* sorted = new int[n];
+    for(int i = 0; i < n; i++){
+        sorted[i] = scores[i];
+    }
+
+    // sort
     for(int i = 0; i < n; i ++){
-            if(scores[i] > largestScore){
-                largestScore = scores[i];
-                userList[0] = i;
+        for(int k = i+1; k < n; k++){
+            if(sorted[k] > sorted[i]){
+                temp = sorted[i];
+                sorted[i] = sorted[k];
+                sorted[k] = temp;
+            }
         }
     }
 
-    for(int i = 1; i < n; i ++){
+    bool alreadyAdded;
+    // map values to indecies
+    for(int i = 0; i < n; i ++){
+        alreadyAdded = false;
         
-        nextHighest = scores[userList[i-1]];
+        for(int k = n-1; k >= 0; k --){
 
-        /*
-        // mark as duplicate value if duplicated AND not already added.
-        for(int k = 0; k < n; k ++){
-            if(scores[i] == scores[k] && i != k){
-                isDuplicate = true;
+            if(i > 1 && userList[i-1] == k){
+                alreadyAdded = true;
             }
-            else{isDuplicate = false;}
-    
+
+            if(sorted[i] == scores[k] && i != k && !alreadyAdded){
+                userList[i] = k;
+                break;
+            }
+            alreadyAdded = false;
         }
-        */
-       
-        largestScore = 0;
-        for(int k = 0; k < n; k ++){
-
-            if(scores[i] == scores[k] && i != k){
-                isDuplicate = true;
-
-                for(int p = 0; p <= i; p++){
-                    if(k == p) {isDuplicate = false;}
-                }
-            }
-            else{
-                isDuplicate = false;
-            }
-
-            if((scores[k] > largestScore && scores[k] < nextHighest) || isDuplicate){
-                largestScore = scores[k];
-                user = k;
-            }
-        }
-
-        userList[i] = user;
     }
-
-    /*
-    for(int i = 0; i < n; i ++){
-        cout << "user i: " << i << " | " << "score: " << scores[i] << endl;
-    }
-    */
 
     return userList;
 }
