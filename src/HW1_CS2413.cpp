@@ -32,7 +32,6 @@ class CRM {
         void addColumn(int col); // add a column number to the colPos array
 
         void display(); // prints the three CRM arrays
-
         int mostInfluentialUser();
         int mostActiveUser();
 
@@ -40,14 +39,9 @@ class CRM {
         int* activeUsers();
         
         ~CRM();
-
-
-
 };
 
-CRM::CRM(){
-
-}
+CRM::CRM(){}
 
 CRM::CRM(int rows, int cols, int numNonZeros){
     n = rows;
@@ -211,17 +205,10 @@ int* CRM::activeUsers(){
     return userSort(scores);
 }
 
-// takes an array of scores and returns a list of it's indicies in order based on the score.
+// takes an array of scores and returns an array of indecies (representing the users in our CRM), ordered by score and not index.
 int* CRM::userSort(int* scores){
-
     int* userList = new int[n];
-    int user;
-    int nextHighest;
-    int score;
-    bool isDuplicate;
     int temp;
-
-    int largestScore = 0;
 
     // duplicate
     int* sorted = new int[n];
@@ -247,18 +234,24 @@ int* CRM::userSort(int* scores){
         
         for(int k = n-1; k >= 0; k --){
 
-            if(i > 1 && userList[i-1] == k){
+            if(i > 0 && userList[i-1] == k){
                 alreadyAdded = true;
             }
 
             if(sorted[i] == scores[k] && i != k && !alreadyAdded){
                 userList[i] = k;
+
+                // Equal-score indecies should be in numerical order.
+                if(i > 0 && scores[userList[i-1]] == scores[userList[i]] && userList[i-1] > userList[i]){
+                    temp = userList[i-1];
+                    userList[i-1] = userList[i];
+                    userList[i] = temp;
+                }
                 break;
             }
             alreadyAdded = false;
         }
     }
-
     return userList;
 }
 
@@ -272,12 +265,8 @@ CRM::~CRM(){
     // this was in the template, but why? Same reason as deleting arrays?
     n = m = 0;
     nonZeros = 0;
-    rCounter = vCounter = cCounter = 0;
-
+    rCounter = vCounter = cCounter = newRowCount = 0;
 }
-
-
-
 
 int main(){
 
@@ -330,7 +319,6 @@ int main(){
     delete A;
     delete [] influentialityVector;
     delete [] activityVector;
-
 
     return 1;
 }
