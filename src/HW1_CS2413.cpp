@@ -1,44 +1,47 @@
 #include <iostream>
 using namespace std;
 
+// A CRM matrix represents the relationship between a set of (n) users and the relationships between their tweets and retweets.
 class CRM {
     private:
-        int rCounter; // these are to keep track of how far each array has been filled.
+        // These are to keep track of how far each array has been filled: for a cost of 8 bytes each we can continually call our add methods until the arrays have been filled, without changing the pointer.
+        int rCounterArray; // Tracks along the indecies of rowPos to add indecies of *values. 'rCounter' variables work together to track both rowPos and corresponding entries in *values.
+        int rCounterVals; // Increments with each input to help find the indecies of *values that corresponds to each user.
         int cCounter;
         int vCounter;
-		int newRowCount; // allows us to track where the new rows begin; as addRow() gets repeatedly called and cleared from the stack, we need to keep track of which value marks a new row.
+
         static const int EMPTY_ROW = -1; // default value for an empty row.
 
-		int influenceScore(int user);
-		int activityScore(int user);
-        int* userSort(int* scores);
+		int influenceScore(int user); // calculates the Influence score for an individual user.
+		int activityScore(int user); // calculates the Activity score for an individual user.
+        int* userSort(int* scores); // takes in a pointer to an array of scores and returns a pointer to an array sorted highest-scoring index to lowest-scoring. This is used to calculate lists for both metrics used in this class: Influence and Activity.
 		
     protected:
-        int n; // number of rows in CRM
-        int m; // number of columns in CRM
-        int nonZeros; // number of non-zeros in CRM
+        int n; // number of rows in the CRM: this serves as the reference value representing the number of users.
+        int m; // number of columns in the CRM.
+        int nonZeros; // number of non-zeros in the CRM. 
 
-        int* values; // Points to an array containing all non-zero values, in order
+        int* values; // Points to an array containing all non-zero values, in order of appearance in the matrix (read left -> right, top -> bottom).
         int* rowPos; // Points to an array where each index represents a user and the entry is the index in 'values[]' where that user's reweets begin.
         int* colPos; // Contains column numbers of the entries listed in 'values:' there is a 1:1 relationship between each index of colPos and of values.
 
     public:
-        CRM();
-        CRM(int rows, int cols, int NumZeros);
+        CRM(); // Default contructor
+        CRM(int rows, int cols, int NumZeros); // Primary constructor requires dimensions and number of values to store.
 
-        int getNumRows(); // getter method for 'n'
-        void addValue(int value); // add value to 'values' array
-        void addRow(int row); // add a row number to the rowPos array
-        void addColumn(int col); // add a column number to the colPos array
+        int getNumRows(); // Getter method for 'n'
+        void addValue(int value); // Add value to 'values' array.
+        void addRow(int row); // Add an index to the rowPos array for a given row: this index added represents the index in *values at which that user's non-zero values begin.
+        void addColumn(int col); // Add a column number to the colPos array. 
 
-        void display(); // prints the three CRM arrays
-        int mostInfluentialUser();
-        int mostActiveUser();
+        void display(); // Prints the three CRM arrays.
+        int mostInfluentialUser(); // Identifies the user with the highest Influence score.
+        int mostActiveUser(); // Identifies the user with the highest Activity score.
 
-        int* influentialUsers();
-        int* activeUsers();
+        int* influentialUsers(); // Prints a list of user indecies sorted by Influence score, high to low.
+        int* activeUsers(); // Prints a list of user indecies sorted by Activity score, high to low.
         
-        ~CRM();
+        ~CRM(); // Default destructor is the only destructor.
 };
 
 CRM::CRM(){}
@@ -51,10 +54,10 @@ CRM::CRM(int rows, int cols, int numNonZeros){
     rowPos = new int[n];
     colPos = new int[nonZeros];
 
-    rCounter = 0;
+    rCounterArray = 0;
     cCounter = 0;
     vCounter = 0;
-	newRowCount = 0;
+	rCounterVals = 0;
 }
 
 int CRM::getNumRows(){
@@ -63,29 +66,30 @@ int CRM::getNumRows(){
 
 void CRM::addValue(int val){
     values[vCounter] = val;
-    vCounter ++;
+    vCounter ++; // next index to fill.
 }
 
 void CRM::addRow(int row){
 
-if(row > rCounter){ // we've skipped a row and need to fill an EMPTY ROW.
-    int skippedRows = row - rCounter;
-    while(skippedRows > 0){
-        rowPos[rCounter] = -1;
-		rCounter ++;
-        skippedRows --;
+    // This condition means we have skipped adding a row and need to fill an EMPTY_ROW.
+    if(row > rCounterArray){ 
+        int skippedRows = row - rCounterArray;
+        while(skippedRows > 0){
+            rowPos[rCounterArray] = EMPTY_ROW;
+            rCounterArray ++; // next index to fill.
+            skippedRows --;
+        }
     }
-}
 
-if(row != rCounter - 1){ // checks to see if this is the same as previous row
-    for(int i = 0; i < nonZeros; i++){
-        if(values[i] == values[newRowCount]) {rowPos[rCounter] = i;}
-     }
-    rCounter++;
-}   
+    // Only executes if input stream switches rows/users.
+    if(row != rCounterArray - 1){
+        for(int i = 0; i < nonZeros; i++){
+            if(values[i] == values[rCounterVals]) {rowPos[rCounterArray] = i;}
+        }
+        rCounterArray++; // moves to next index of rowPos
+    }   
 
-newRowCount++;
-
+    rCounterVals++;
 }
 
 void CRM::addColumn(int col){
@@ -113,44 +117,41 @@ void CRM::display(){
     for(int i = 0; i < nonZeros; i++){
         cout << " " << colPos[i];
     }
-    cout << endl;
+    cout << endl << endl;
 }
 
 int CRM::mostInfluentialUser(){
-	// most influential: the user who has been retweeted the most.
 	int currentUser = 0;
 	for(int i = 1; i < n; i ++){
 		if(influenceScore(i) > influenceScore(currentUser))
 			currentUser = i;
 	}
-
 	return currentUser;
 }
 
 int CRM::influenceScore(int user){
+    // For the given user, searches colPos to identify indecies in *values that represent people retweeting them (their influence); adds the value to a running sum. 
+
 	int userScore = 0;
 	for(int i = 0; i < nonZeros; i++){
 		if(colPos[i] == user){
 			userScore = userScore + values[i];
 		}
 	}
-
 	return userScore;
 }
 
 int CRM::mostActiveUser(){
 	int currentUser = 0;
-
 	for(int i = 0; i < n; i++){
-
 		if(activityScore(i) > activityScore(currentUser))
 			currentUser = i;
 	}
-
     return currentUser;
 }
 
 int CRM::activityScore(int user){
+    // For a given user, this method identifies the range of indicies in *values that must be summed to find the users activity.
 
 	int activityScore = 0;
 	int firstIndex = rowPos[user];
@@ -159,7 +160,7 @@ int CRM::activityScore(int user){
     // If -1, calculating score is simple.
 	if(rowPos[user] == EMPTY_ROW){return activityScore;}
 
-    // executes if "user" is the last entry: simpler case.
+    // executes if "user" is the last entry: simpler case, no need to check next index for missing value.
     if(user == n-1){
         for(int i = rowPos[n-1]; i < nonZeros; i ++)
             activityScore = activityScore + values[i];
@@ -167,7 +168,7 @@ int CRM::activityScore(int user){
         return activityScore;
     }
 
-	// executes for all user IDs other than the last entry: in these cases, a different loop is needed to anticipate potential -1 entries we must pass over.
+	// A loop is used to anticipate potential -1 entries we must pass over.
 	for(int i = 1; i < n; i ++){
 		if(rowPos[user+i] != EMPTY_ROW){
 			lastIndex = rowPos[user+i] - 1;
@@ -205,18 +206,20 @@ int* CRM::activeUsers(){
     return userSort(scores);
 }
 
-// takes an array of scores and returns an array of indecies (representing the users in our CRM), ordered by score and not index.
 int* CRM::userSort(int* scores){
+// takes an array of scores and returns an array of indecies (representing the users in our CRM), ordered by score.
+// (1) Duplicates values to new array (2) Sorts the new array (3) Matches values of sorted array to their index in the unsorted array to identify which user had which score.
+
     int* userList = new int[n];
     int temp;
 
-    // duplicate
+    // (1) Duplicate
     int* sorted = new int[n];
     for(int i = 0; i < n; i++){
         sorted[i] = scores[i];
     }
 
-    // sort
+    // (2) Sort
     for(int i = 0; i < n; i ++){
         for(int k = i+1; k < n; k++){
             if(sorted[k] > sorted[i]){
@@ -227,17 +230,20 @@ int* CRM::userSort(int* scores){
         }
     }
 
+    // (3) Match sorted score to index in unsorted array.
     bool alreadyAdded;
-    // map values to indecies
     for(int i = 0; i < n; i ++){
         alreadyAdded = false;
         
-        for(int k = n-1; k >= 0; k --){
+        // 'i' represents the rank of scores; 'k' represents the user.
+        for(int k = 0; k < n; k ++){
 
+            // checks to see if 'k' a;lready appears in the list of users.
             if(i > 0 && userList[i-1] == k){
                 alreadyAdded = true;
             }
 
+            // When an equal score is found, its unsorted index (representing user #) is added to the list of users.
             if(sorted[i] == scores[k] && i != k && !alreadyAdded){
                 userList[i] = k;
 
@@ -260,12 +266,11 @@ CRM::~CRM(){
 	if (rowPos != NULL) delete[] rowPos;
 	if (colPos != NULL) delete[] colPos;
 
-    cout << "CRM object succesfully destroyed: memory leak avoided (probably)" << endl;
+    cout << "CRM Object Destroyed!!" << endl;
 
-    // this was in the template, but why? Same reason as deleting arrays?
     n = m = 0;
     nonZeros = 0;
-    rCounter = vCounter = cCounter = newRowCount = 0;
+    rCounterArray = vCounter = cCounter = rCounterVals = 0;
 }
 
 int main(){
@@ -282,14 +287,12 @@ int main(){
     // with numRows, numCols, and numNonZeros already read we just need each row of users, of which there are numRows.
     for(int i = 0; i < numNonZeros; i ++){
         cin >> row >> col >> value;
-
-        (*A).addValue(value);
-        (*A).addRow(row);
-        (*A).addColumn(col);
+        (*A).addValue (value);
+        (*A).addRow (row);
+        (*A).addColumn (col);
         
     }
-
-    (*A).display();
+    (*A).display ( );
 
     // Find most influential user
 	int mostInf = (*A).mostInfluentialUser ();
@@ -303,13 +306,13 @@ int main(){
 
     // Rank users by their influence
     int* influentialityVector = (*A).influentialUsers ();
-	cout << "Users ranked by Influentiality: " << endl;
+	cout << "Users ranked by Influentiality: ";
     for (int i=0; i < (*A).getNumRows ( ); i++) 
 	    cout << influentialityVector [i] << " ";
-    cout << endl << endl;
+    cout << endl;
 
     // Rank users by how active they are
-    cout << "Users ranked by Activity: " << endl;
+    cout << "Users ranked by Activity: ";
     int* activityVector = (*A).activeUsers();
     for (int i=0; i < (*A).getNumRows ( ); i++) 
 		cout << activityVector[i] << " ";
@@ -320,6 +323,6 @@ int main(){
     delete [] influentialityVector;
     delete [] activityVector;
 
-    return 1;
+    return 0;
 }
 
