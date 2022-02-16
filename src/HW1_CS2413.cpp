@@ -1,7 +1,7 @@
 #include <iostream>
 using namespace std;
 
-// A CRM matrix represents the relationship between a set of (n) users and the relationships between their tweets and retweets.
+// A CRM matrix represents the relationships between a set of (n) users as determined by their tweets/retweets.
 class CRM {
     private:
         // These are to keep track of how far each array has been filled: for a cost of 8 bytes each we can continually call our add methods until the arrays have been filled, without changing the pointer.
