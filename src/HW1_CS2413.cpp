@@ -1,25 +1,25 @@
 #include <iostream>
 using namespace std;
 
-// A CRM matrix represents the relationships between a set of (n) users as determined by their tweets/retweets.
+// A CRM matrix represents the relationships between a set of (n) users, as determined by their tweets and retweets of each other.
 class CRM {
     private:
-        // These are to keep track of how far each array has been filled: for a cost of 8 bytes each we can continually call our add methods until the arrays have been filled, without changing the pointer.
-        int rCounterArray; // Tracks along the indecies of rowPos to add indecies of *values. 'rCounter' variables work together to track both rowPos and corresponding entries in *values.
-        int rCounterVals; // Increments with each input to help find the indecies of *values that corresponds to each user.
+        // These are to keep track of how far each array has been filled: for a cost of a few bytes each we can continually call our add methods in the given for() loop until the arrays have been filled, without changing the pointer.
+        int rCounterArray; // Tracks along the indecies of rowPos to add the indicies that separate each user in values[]. 'rCounter' variables work together to track both rowPos and corresponding entries in *values.
+        int rCounterVals; // Increments with each input to keep track of indecies of values[] that corresponds to each user.
         int cCounter;
         int vCounter;
 
-        static const int EMPTY_ROW = -1; // default value for an empty row.
+        static const int EMPTY_ROW = -1; // Default value for an empty row in the CRM, gets stored in rowPos.
 
-		int influenceScore(int user); // calculates the Influence score for an individual user.
-		int activityScore(int user); // calculates the Activity score for an individual user.
-        int* userSort(int* scores); // takes in a pointer to an array of scores and returns a pointer to an array sorted highest-scoring index to lowest-scoring. This is used to calculate lists for both metrics used in this class: Influence and Activity.
+		int influenceScore(int user); // Calculates the Influence score for an individual user.
+		int activityScore(int user); // Calculates the Activity score for an individual user.
+        int* userSort(int* scores); // Takes in a pointer to an array of scores and returns a pointer to another array, this one sorted highest-scoring index to lowest-scoring. This is used to calculate lists for both metrics used in this class: Influence and Activity.
 		
     protected:
-        int n; // number of rows in the CRM: this serves as the reference value representing the number of users.
-        int m; // number of columns in the CRM.
-        int nonZeros; // number of non-zeros in the CRM. 
+        int n; // Number of rows in the CRM: this serves as the reference value representing the number of users.
+        int m; // Number of columns in the CRM.
+        int nonZeros; // Number of non-zeros in the CRM. 
 
         int* values; // Points to an array containing all non-zero values, in order of appearance in the matrix (read left -> right, top -> bottom).
         int* rowPos; // Points to an array where each index represents a user and the entry is the index in 'values[]' where that user's reweets begin.
@@ -66,9 +66,10 @@ int CRM::getNumRows(){
 
 void CRM::addValue(int val){
     values[vCounter] = val;
-    vCounter ++; // next index to fill.
+    vCounter ++; // Next index to fill.
 }
 
+// Adds a new entry to rowPos, but only under certain conditions: new rows are only added if the user has changed, as this array only stores entries for each unique user rather than entries for each value.
 void CRM::addRow(int row){
 
     // This condition means we have skipped adding a row and need to fill an EMPTY_ROW.
@@ -94,9 +95,10 @@ void CRM::addRow(int row){
 
 void CRM::addColumn(int col){
     colPos[cCounter] = col;
-    cCounter ++;
+    cCounter ++; // Next index to fill.
 }
 
+// Printed output of the CRM structure and its values.
 void CRM::display(){
     // values
     cout << "values:";
@@ -129,8 +131,9 @@ int CRM::mostInfluentialUser(){
 	return currentUser;
 }
 
+// For the given user, searches colPos to identify indecies in *values that represent people retweeting them (their influence); adds the value to a running sum. 
 int CRM::influenceScore(int user){
-    // For the given user, searches colPos to identify indecies in *values that represent people retweeting them (their influence); adds the value to a running sum. 
+    
 
 	int userScore = 0;
 	for(int i = 0; i < nonZeros; i++){
@@ -150,8 +153,9 @@ int CRM::mostActiveUser(){
     return currentUser;
 }
 
+// For a given user, this method identifies the range of indicies in *values that must be summed to find the users activity.
 int CRM::activityScore(int user){
-    // For a given user, this method identifies the range of indicies in *values that must be summed to find the users activity.
+    
 
 	int activityScore = 0;
 	int firstIndex = rowPos[user];
@@ -238,13 +242,13 @@ int* CRM::userSort(int* scores){
         // 'i' represents the rank of scores; 'k' represents the user.
         for(int k = 0; k < n; k ++){
 
-            // checks to see if 'k' a;lready appears in the list of users.
+            // checks to see if 'k' already appears in the list of users.
             if(i > 0 && userList[i-1] == k){
                 alreadyAdded = true;
             }
 
             // When an equal score is found, its unsorted index (representing user #) is added to the list of users.
-            if(sorted[i] == scores[k] && i != k && !alreadyAdded){
+            if(sorted[i] == scores[k] && !alreadyAdded){
                 userList[i] = k;
 
                 // Equal-score indecies should be in numerical order.
